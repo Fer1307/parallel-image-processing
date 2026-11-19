@@ -1,0 +1,38 @@
+# Imágenes de prueba y resultantes
+*.bmp
+img/
+imagenes_bmp/
+
+# Ejecutables y archivos compilados de C
+transformaciones
+prueba
+a.out
+*.out
+*.o
+*.obj
+*.exe
+*.so
+*.a
+*.dll
+
+# Logs generados por el programa
+output_log.txt
+*.log
+
+# Ambientes virtuales de Python
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+
+# Configuración local del editor y de clangd
+.vscode/
+.idea/
+.cache/
+compile_flags.txt
+compile_commands.json
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
