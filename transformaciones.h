@@ -41,7 +41,7 @@ extern void inv_hor_color(const char* path, const char* mask) {
     int padding = (4 - ((ancho * 3) % 4)) % 4;
     long total_pixeles = ancho * alto;
 
-    unsigned char* arr_in_b = (unsigned char*)malloc(total_pixeles * sizeof(unsigned char));
+    unsigned char* arr_in_b = (unsigned char*)malloc(total_pixeles * sizeof(unsigned char));//reserva de memoria
     unsigned char* arr_in_g = (unsigned char*)malloc(total_pixeles * sizeof(unsigned char));
     unsigned char* arr_in_r = (unsigned char*)malloc(total_pixeles * sizeof(unsigned char));
 
@@ -619,6 +619,226 @@ extern void blur_bn(const char* input_path, const char* name_output, int kernel_
     free(input_rows);
     free(temp_rows);
     free(output_rows);
+    fclose(image);
+    fclose(outputImage);
+}
+
+
+// 7. DETECCIÓN DE BORDES EN X (bordes_x)
+extern void bordes_x(const char* path, const char* mask) {
+    FILE *image, *outputImage;
+    char add_char[100] = "./img/";
+    strcat(add_char, mask);
+    strcat(add_char, ".bmp");
+    printf("%s\n", add_char);
+
+    image = fopen(path, "rb");
+    outputImage = fopen(add_char, "wb");
+
+    if (!image || !outputImage) {
+        printf("Error abriendo archivos en bordes_x.\n");
+        if (image) fclose(image);
+        if (outputImage) fclose(outputImage);
+        return;
+    }
+
+    long ancho, tam, bpp, alto;
+    unsigned char r, g, b, pixel;
+    unsigned char xx[54];
+
+    for (int i = 0; i < 54; i++) {
+        xx[i] = fgetc(image);
+        fputc(xx[i], outputImage);
+    }
+
+    tam   = (long)xx[4] * 65536 + (long)xx[3] * 256 + (long)xx[2];
+    bpp   = (long)xx[29] * 256 + (long)xx[28];
+    ancho = (long)xx[20] * 65536 + (long)xx[19] * 256 + (long)xx[18];
+    alto  = (long)xx[24] * 65536 + (long)xx[23] * 256 + (long)xx[22];
+
+    int padding = (4 - ((ancho * 3) % 4)) % 4;
+    long total_pixeles = ancho * alto;
+
+    unsigned char* arr_in_bn = (unsigned char*)malloc(total_pixeles * sizeof(unsigned char));
+    unsigned char* arr_out = (unsigned char*)malloc(total_pixeles * sizeof(unsigned char));
+
+    long j = 0;
+    for (long i = 0; i < alto; i++) {
+        for (long x = 0; x < ancho; x++) {
+            b = fgetc(image);
+            g = fgetc(image);
+            r = fgetc(image);
+
+            pixel = (unsigned char)(0.21 * r + 0.72 * g + 0.07 * b);
+            arr_in_bn[j] = pixel;
+            j++;
+        }
+        for (int p = 0; p < padding; p++) {
+            fgetc(image);
+        }
+    }
+
+    // Detección de bordes en dirección X
+    for (long i = 0; i < alto; i++) {
+        for (long x = 0; x < ancho; x++) {
+            long index = (i * ancho) + x;
+
+            if (x > 0 && x < ancho - 1) {
+                int izquierda = arr_in_bn[index - 1];
+                int derecha = arr_in_bn[index + 1];
+
+                int diferencia = abs(derecha - izquierda) / 2;
+                arr_out[index] = (unsigned char)diferencia;
+            }
+            else {
+                arr_out[index] = 0;
+            }
+        }
+    }
+
+    for (long i = 0; i < alto; i++) {
+        for (long x = 0; x < ancho; x++) {
+            long index = (i * ancho) + x;
+            unsigned char val = arr_out[index];
+
+            fputc(val, outputImage); // B
+            fputc(val, outputImage); // G
+            fputc(val, outputImage); // R
+        }
+        for (int p = 0; p < padding; p++) {
+            fputc(0, outputImage);
+        }
+    }
+
+    FILE *outputLog = fopen("output_log.txt", "a");
+    if (outputLog == NULL) {
+        fprintf(stderr, "Error: No se pudo crear o abrir el archivo de registro.\n");
+        free(arr_in_bn);
+        free(arr_out);
+        fclose(image);
+        fclose(outputImage);
+        return;
+    }
+
+    printf("Deteccion de bordes en X\n");
+    fprintf(outputLog, "Función: bordes_x, con %s\n", path);
+    fprintf(outputLog, "Localidades totales leídas: %ld\n", total_pixeles);
+    fprintf(outputLog, "Localidades totales escritas: %ld\n", total_pixeles);
+    fprintf(outputLog, "-------------------------------------\n");
+    fclose(outputLog);
+
+    free(arr_in_bn);
+    free(arr_out);
+    fclose(image);
+    fclose(outputImage);
+}
+
+
+// 8. DETECCIÓN DE BORDES EN Y (bordes_y)
+extern void bordes_y(const char* path, const char* mask) {
+    FILE *image, *outputImage;
+    char add_char[100] = "./img/";
+    strcat(add_char, mask);
+    strcat(add_char, ".bmp");
+    printf("%s\n", add_char);
+
+    image = fopen(path, "rb");
+    outputImage = fopen(add_char, "wb");
+
+    if (!image || !outputImage) {
+        printf("Error abriendo archivos en bordes_y.\n");
+        if (image) fclose(image);
+        if (outputImage) fclose(outputImage);
+        return;
+    }
+
+    long ancho, tam, bpp, alto;
+    unsigned char r, g, b, pixel;
+    unsigned char xx[54];
+
+    for (int i = 0; i < 54; i++) {
+        xx[i] = fgetc(image);
+        fputc(xx[i], outputImage);
+    }
+
+    tam   = (long)xx[4] * 65536 + (long)xx[3] * 256 + (long)xx[2];
+    bpp   = (long)xx[29] * 256 + (long)xx[28];
+    ancho = (long)xx[20] * 65536 + (long)xx[19] * 256 + (long)xx[18];
+    alto  = (long)xx[24] * 65536 + (long)xx[23] * 256 + (long)xx[22];
+
+    int padding = (4 - ((ancho * 3) % 4)) % 4;
+    long total_pixeles = ancho * alto;
+
+    unsigned char* arr_in_bn = (unsigned char*)malloc(total_pixeles * sizeof(unsigned char));
+    unsigned char* arr_out = (unsigned char*)malloc(total_pixeles * sizeof(unsigned char));
+
+    long j = 0;
+    for (long i = 0; i < alto; i++) {
+        for (long x = 0; x < ancho; x++) {
+            b = fgetc(image);
+            g = fgetc(image);
+            r = fgetc(image);
+
+            pixel = (unsigned char)(0.21 * r + 0.72 * g + 0.07 * b);
+            arr_in_bn[j] = pixel;
+            j++;
+        }
+        for (int p = 0; p < padding; p++) {
+            fgetc(image);
+        }
+    }
+
+    // Detección de bordes en dirección Y
+    for (long i = 0; i < alto; i++) {
+        for (long x = 0; x < ancho; x++) {
+            long index = (i * ancho) + x;
+
+            if (i > 0 && i < alto - 1) {
+                int arriba = arr_in_bn[index - ancho];
+                int abajo = arr_in_bn[index + ancho];
+
+                int diferencia = abs(abajo - arriba) / 2;
+                arr_out[index] = (unsigned char)diferencia;
+            }
+            else {
+                arr_out[index] = 0;
+            }
+        }
+    }
+
+    for (long i = 0; i < alto; i++) {
+        for (long x = 0; x < ancho; x++) {
+            long index = (i * ancho) + x;
+            unsigned char val = arr_out[index];
+
+            fputc(val, outputImage); // B
+            fputc(val, outputImage); // G
+            fputc(val, outputImage); // R
+        }
+        for (int p = 0; p < padding; p++) {
+            fputc(0, outputImage);
+        }
+    }
+
+    FILE *outputLog = fopen("output_log.txt", "a");
+    if (outputLog == NULL) {
+        fprintf(stderr, "Error: No se pudo crear o abrir el archivo de registro.\n");
+        free(arr_in_bn);
+        free(arr_out);
+        fclose(image);
+        fclose(outputImage);
+        return;
+    }
+
+    printf("Deteccion de bordes en Y\n");
+    fprintf(outputLog, "Función: bordes_y, con %s\n", path);
+    fprintf(outputLog, "Localidades totales leídas: %ld\n", total_pixeles);
+    fprintf(outputLog, "Localidades totales escritas: %ld\n", total_pixeles);
+    fprintf(outputLog, "-------------------------------------\n");
+    fclose(outputLog);
+
+    free(arr_in_bn);
+    free(arr_out);
     fclose(image);
     fclose(outputImage);
 }
